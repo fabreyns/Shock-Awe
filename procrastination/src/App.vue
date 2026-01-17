@@ -12,7 +12,7 @@ const isModelLoaded = ref(false);
 
 let model, maxPredictions;
 let animationId = null; 
-let intervalId = null
+let intervalId = null;
 
 const startCamera = async () => {
   try {
