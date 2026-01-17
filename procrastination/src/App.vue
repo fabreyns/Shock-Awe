@@ -1,24 +1,25 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import * as tmImage from '@teachablemachine/image';
 
-// --- CONFIGURATION ---
-// REPLACE THIS WITH YOUR ACTUAL MODEL URL
+
 const URL = "https://teachablemachine.withgoogle.com/models/cuImnOTCz/";
 
-// --- REFS ---
+
 const videoPlayer = ref(null);
-const predictions = ref([]); // To store the AI's guesses
+const predictions = ref([]); 
 const isModelLoaded = ref(false);
 
 let model, maxPredictions;
-let animationId = null; // To stop the loop later
+let animationId = null; 
 
-// --- CAMERA LOGIC (Same as before) ---
 const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'user' } 
+      video: { facingMode: 'user', 
+        aspectRatio: { exact: 1 }, 
+        width: { ideal: 480 },
+        height: { ideal: 480 } } 
     });
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
@@ -46,7 +47,7 @@ const loadModel = async () => {
 const predictLoop = async () => {
   if (model && videoPlayer.value) {
     // predict() takes the video HTML element as input!
-    const prediction = await model.predict(videoPlayer.value);
+    const prediction = await model.predict(videoPlayer.value, true);
     
     // Update our reactive variable to show on screen
     predictions.value = prediction;
@@ -56,10 +57,19 @@ const predictLoop = async () => {
   }
 };
 
-// --- LIFECYCLE ---
+const showPhoneWarning = computed(() => {
+  const result = predictions.value.find(p => p.className === "With Phone");
+  
+  if (result && result.probability > 0.9) {
+    window.open("https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ","_blank");
+    return true;
+    
+  }
+  return false;
+});
+
 onMounted(async () => {
   await loadModel(); // Load AI first
-  await startCamera(); // Then start camera
 });
 
 onUnmounted(() => {
@@ -90,19 +100,20 @@ onUnmounted(() => {
     </nav>
 
   <div class="container-fluid d-flex justify-content-center pt-5">
-    <button class="btn btn-primary fs-6" @click="startCamera">PRESS ME</button>
+    <button class="btn btn-primary fs-6" @click="startCamera">Turn on Camera + Reset</button>
   </div>
   <div class="container-fluid d-flex justify-content-center mt-4 mirror-mode">
     <video 
       ref="videoPlayer" 
       autoplay 
       playsinline 
-      width="640" 
+      width="480" 
       height="480" 
       class="border border-dark"
     ></video>
   </div>
 
+  <div class="container-fluid d-flex justify-content-center pt-4">
   <div class="card" style="width: 640px;">
       <div class="card-header bg-dark text-white">
         Phone Prediction
@@ -113,6 +124,7 @@ onUnmounted(() => {
           :key="p.className" 
           class="list-group-item d-flex justify-content-between align-items-center"
         >
+
           {{ p.className }}
           <div class="progress" style="width: 60%;">
             <div 
@@ -127,10 +139,17 @@ onUnmounted(() => {
         </li>
       </ul>
     </div>
+    </div>
+
+    <div v-if="showPhoneWarning" class="container d-flex justify-content-center">
+      <h1 class="text-danger">PUT PHONE AWAY NOWWWW!!! </h1>
+
+    </div>
+    
 </template>
 
 <style scoped>
 .mirror-mode {
-  transform: scaleX(-1); /* Flips the element horizontally */
+  transform: scaleX(-1); 
 }
 </style>
