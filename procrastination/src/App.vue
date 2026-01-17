@@ -17,7 +17,6 @@ const YOUTUBE_LINK = "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ";
 
 let model, maxPredictions;
 let animationId = null;
-let intervalId = null;
 
 const startCamera = async () => {
   try {
@@ -31,12 +30,9 @@ const startCamera = async () => {
     });
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
-      if (!intervalId) {
-        intervalId = setInterval(predictLoop, 2000);
-      }
-      // videoPlayer.value.onloadeddata = () => {
-      //   predictLoop();
-      // };
+      videoPlayer.value.onloadeddata = () => {
+        predictLoop();
+      };
     }
   } catch (error) {
     console.error("Camera Error:", error);
@@ -151,10 +147,6 @@ const formatTimestamp = (timestamp) => {
   return new Date(timestamp).toLocaleString();
 };
 
-// Track last opened timestamp to prevent spam
-let lastVideoOpenedTime = 0;
-const VIDEO_COOLDOWN = 5000; // 5 seconds cooldown
-
 const handleMessage = (event) => {
   const message = event?.data;
 
@@ -166,20 +158,18 @@ const handleMessage = (event) => {
     return;
   }
 
-  visitHistory.value = [message.payload, ...visitHistory.value].slice(
-    0,
-    MAX_ENTRIES,
-  );
+  // Add new visit to the end
+  visitHistory.value.push(message.payload);
 
-  // Check if the new visit is whitelisted
+  // If we exceed max entries, remove the oldest (first) item
+  if (visitHistory.value.length > MAX_ENTRIES) {
+    visitHistory.value.shift(); // Remove from front
+  }
+
+  // Check if the new visit is whitelisted - open video every time if not whitelisted
   const newVisit = message.payload;
   if (!isWhitelisted(newVisit.domain)) {
-    // Check cooldown to prevent spam
-    const now = Date.now();
-    if (now - lastVideoOpenedTime > VIDEO_COOLDOWN) {
-      window.open(YOUTUBE_LINK, "_blank");
-      lastVideoOpenedTime = now;
-    }
+    window.open(YOUTUBE_LINK, "_blank");
   }
 };
 
@@ -211,9 +201,9 @@ const predictLoop = async () => {
 };
 
 const showPhoneWarning = ref(false);
-const hasOpenedVideo = ref(false);
+let wasPhoneDetected = false;
 
-// Watch for phone detection
+// Watch for phone detection - opens video every time phone is detected
 watch(
   predictions,
   (newPredictions) => {
@@ -222,18 +212,14 @@ watch(
     if (result && result.probability > 0.9) {
       showPhoneWarning.value = true;
 
-      // Only open video once per detection session
-      if (!hasOpenedVideo.value) {
+      // Only open if phone wasn't already detected (prevents spam while holding phone)
+      if (!wasPhoneDetected) {
         window.open(YOUTUBE_LINK, "_blank");
-        hasOpenedVideo.value = true;
-
-        // Reset after 5 seconds to allow re-detection
-        setTimeout(() => {
-          hasOpenedVideo.value = false;
-        }, 5000);
+        wasPhoneDetected = true;
       }
     } else {
       showPhoneWarning.value = false;
+      wasPhoneDetected = false; // Reset when phone is put away
     }
   },
   { deep: true },
@@ -257,7 +243,7 @@ onBeforeUnmount(() => {
 
 <template>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark navigationbar">
-    <div class="container-fluid justify-content-center">
+    <div class="container-fluid">
       <RouterLink class="navbar-brand" to="/">
         How To Procrastinate Even more
       </RouterLink>
