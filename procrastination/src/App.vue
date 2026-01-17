@@ -23,7 +23,6 @@ const startCamera = async () => {
     });
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
-      // Wait for video to load data before starting prediction
       videoPlayer.value.onloadeddata = () => {
         predictLoop();
       };
@@ -33,12 +32,10 @@ const startCamera = async () => {
   }
 };
 
-// --- AI LOGIC ---
 const loadModel = async () => {
   const modelURL = URL + "model.json";
   const metadataURL = URL + "metadata.json";
 
-  // Load the model
   model = await tmImage.load(modelURL, metadataURL);
   maxPredictions = model.getTotalClasses();
   isModelLoaded.value = true;
@@ -46,13 +43,10 @@ const loadModel = async () => {
 
 const predictLoop = async () => {
   if (model && videoPlayer.value) {
-    // predict() takes the video HTML element as input!
     const prediction = await model.predict(videoPlayer.value, true);
     
-    // Update our reactive variable to show on screen
     predictions.value = prediction;
     
-    // Keep looping
     animationId = requestAnimationFrame(predictLoop);
   }
 };
@@ -69,11 +63,10 @@ const showPhoneWarning = computed(() => {
 });
 
 onMounted(async () => {
-  await loadModel(); // Load AI first
+  await loadModel(); 
 });
 
 onUnmounted(() => {
-  // Clean up the loop when leaving the page
   if (animationId) cancelAnimationFrame(animationId);
 });
 </script>
