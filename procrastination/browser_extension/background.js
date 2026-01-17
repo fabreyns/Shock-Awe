@@ -12,11 +12,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+<<<<<<< HEAD
 const PROCRASTINATION_ORIGINS = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ];
 
+=======
+>>>>>>> 1ca4a0c (Integrate browser extension)
 function logWebsite(url) {
   try {
     const urlObj = new URL(url);
@@ -43,9 +46,14 @@ function logWebsite(url) {
     // Store in chrome.storage for the popup to display
     chrome.storage.local.get(["visitHistory"], (result) => {
       const history = result.visitHistory || [];
+<<<<<<< HEAD
       history.unshift(visitData); // Add to beginning
 
       // Keep only last 50 visits
+=======
+      history.unshift(visitData);
+
+>>>>>>> 1ca4a0c (Integrate browser extension)
       if (history.length > 50) {
         history.pop();
       }
@@ -53,12 +61,18 @@ function logWebsite(url) {
       chrome.storage.local.set({ visitHistory: history });
     });
 
+<<<<<<< HEAD
     sendToProcrastinationSite(visitData);
+=======
+    // Send to external Vue app
+    sendToExternalApp(visitData);
+>>>>>>> 1ca4a0c (Integrate browser extension)
   } catch (e) {
     console.error("Error logging website:", e);
   }
 }
 
+<<<<<<< HEAD
 function sendToProcrastinationSite(data) {
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
@@ -75,6 +89,33 @@ function sendToProcrastinationSite(data) {
       }
 
       chrome.tabs.sendMessage(tab.id, { type: "TRACK_VISIT", payload: data });
+=======
+// Send data to your Vue app via postMessage
+function sendToExternalApp(data) {
+  // Query all tabs to find your Vue app
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      // Check if the tab URL matches your Vue app
+      // Update this URL to match where your Vue app is hosted
+      if (
+        tab.url &&
+        (tab.url.includes("localhost:5173") || // Vite default
+          tab.url.includes("localhost:3000") || // Common dev port
+          tab.url.includes("localhost:8080") || // Vue CLI default
+          tab.url.includes("your-production-domain.com")) // Add your production domain
+      ) {
+        // Send message to the tab's content script
+        chrome.tabs
+          .sendMessage(tab.id, {
+            type: "TRACK_VISIT",
+            payload: data,
+          })
+          .catch((err) => {
+            // Tab might not have content script loaded yet
+            console.log("Could not send to tab:", err.message);
+          });
+      }
+>>>>>>> 1ca4a0c (Integrate browser extension)
     });
   });
 }
