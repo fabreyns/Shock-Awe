@@ -1,31 +1,71 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import * as tmImage from '@teachablemachine/image';
 
-// 1. Create a reference to hold the video element
+// --- CONFIGURATION ---
+// REPLACE THIS WITH YOUR ACTUAL MODEL URL
+const URL = "https://teachablemachine.withgoogle.com/models/cuImnOTCz/";
+
+// --- REFS ---
 const videoPlayer = ref(null);
+const predictions = ref([]); // To store the AI's guesses
+const isModelLoaded = ref(false);
 
-// 2. Define the function to start the camera
+let model, maxPredictions;
+let animationId = null; // To stop the loop later
+
+// --- CAMERA LOGIC (Same as before) ---
 const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: true 
+      video: { facingMode: 'user' } 
     });
-    
-    // Attach the stream to the video element we referenced
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
+      // Wait for video to load data before starting prediction
+      videoPlayer.value.onloadeddata = () => {
+        predictLoop();
+      };
     }
   } catch (error) {
     console.error("Camera Error:", error);
-    alert("Error: " + error.name);
   }
 };
 
-// 3. Run this ONLY after the component is mounted (HTML is ready)
-onMounted(() => {
-  startCamera();
+// --- AI LOGIC ---
+const loadModel = async () => {
+  const modelURL = URL + "model.json";
+  const metadataURL = URL + "metadata.json";
+
+  // Load the model
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+  isModelLoaded.value = true;
+};
+
+const predictLoop = async () => {
+  if (model && videoPlayer.value) {
+    // predict() takes the video HTML element as input!
+    const prediction = await model.predict(videoPlayer.value);
+    
+    // Update our reactive variable to show on screen
+    predictions.value = prediction;
+    
+    // Keep looping
+    animationId = requestAnimationFrame(predictLoop);
+  }
+};
+
+// --- LIFECYCLE ---
+onMounted(async () => {
+  await loadModel(); // Load AI first
+  await startCamera(); // Then start camera
 });
 
+onUnmounted(() => {
+  // Clean up the loop when leaving the page
+  if (animationId) cancelAnimationFrame(animationId);
+});
 </script>
 
 <template>
@@ -62,6 +102,31 @@ onMounted(() => {
       class="border border-dark"
     ></video>
   </div>
+
+  <div class="card" style="width: 640px;">
+      <div class="card-header bg-dark text-white">
+        Phone Prediction
+      </div>
+      <ul class="list-group list-group-flush">
+        <li 
+          v-for="p in predictions" 
+          :key="p.className" 
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          {{ p.className }}
+          <div class="progress" style="width: 60%;">
+            <div 
+              class="progress-bar" 
+              role="progressbar" 
+              :style="{ width: (p.probability * 100) + '%' }"
+              :class="p.probability > 0.8 ? 'bg-success' : 'bg-secondary'"
+            >
+              {{ (p.probability * 100).toFixed(0) }}%
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
 </template>
 
 <style scoped>
