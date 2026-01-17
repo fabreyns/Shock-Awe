@@ -13,6 +13,7 @@ const MAX_ENTRIES = 50;
 const URL = "https://teachablemachine.withgoogle.com/models/cuImnOTCz/";
 const predictions = ref([]);
 const isModelLoaded = ref(false);
+const YOUTUBE_LINK = "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ";
 
 let model, maxPredictions;
 let animationId = null;
@@ -58,15 +59,27 @@ const loadWhitelist = () => {
   const rawWhitelist = localStorage.getItem(WHITELIST_KEY);
 
   if (!rawWhitelist) {
-    whitelist.value = [];
+    // Initialize with YouTube domain by default
+    whitelist.value = ["youtube.com", "youtu.be"];
+    saveWhitelist();
     return;
   }
 
   try {
     whitelist.value = JSON.parse(rawWhitelist);
+
+    // Ensure YouTube domains are always in the whitelist
+    if (!whitelist.value.includes("youtube.com")) {
+      whitelist.value.push("youtube.com");
+    }
+    if (!whitelist.value.includes("youtu.be")) {
+      whitelist.value.push("youtu.be");
+    }
+    saveWhitelist();
   } catch (error) {
     console.warn("Invalid whitelist in localStorage, resetting.");
-    whitelist.value = [];
+    whitelist.value = ["youtube.com", "youtu.be"];
+    saveWhitelist();
   }
 };
 
@@ -134,6 +147,10 @@ const formatTimestamp = (timestamp) => {
   return new Date(timestamp).toLocaleString();
 };
 
+// Track last opened timestamp to prevent spam
+let lastVideoOpenedTime = 0;
+const VIDEO_COOLDOWN = 5000; // 5 seconds cooldown
+
 const handleMessage = (event) => {
   const message = event?.data;
 
@@ -149,6 +166,17 @@ const handleMessage = (event) => {
     0,
     MAX_ENTRIES,
   );
+
+  // Check if the new visit is whitelisted
+  const newVisit = message.payload;
+  if (!isWhitelisted(newVisit.domain)) {
+    // Check cooldown to prevent spam
+    const now = Date.now();
+    if (now - lastVideoOpenedTime > VIDEO_COOLDOWN) {
+      window.open(YOUTUBE_LINK, "_blank");
+      lastVideoOpenedTime = now;
+    }
+  }
 };
 
 const handleStorage = (event) => {
@@ -192,10 +220,7 @@ watch(
 
       // Only open video once per detection session
       if (!hasOpenedVideo.value) {
-        window.open(
-          "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ",
-          "_blank",
-        );
+        window.open(YOUTUBE_LINK, "_blank");
         hasOpenedVideo.value = true;
 
         // Reset after 5 seconds to allow re-detection
