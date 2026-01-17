@@ -59,8 +59,7 @@ const loadWhitelist = () => {
   const rawWhitelist = localStorage.getItem(WHITELIST_KEY);
 
   if (!rawWhitelist) {
-    // Initialize with YouTube domain by default
-    whitelist.value = ["youtube.com", "youtu.be"];
+    whitelist.value = ["localhost", "youtube.com", "youtu.be"];
     saveWhitelist();
     return;
   }
@@ -68,7 +67,9 @@ const loadWhitelist = () => {
   try {
     whitelist.value = JSON.parse(rawWhitelist);
 
-    // Ensure YouTube domains are always in the whitelist
+    if (!whitelist.value.includes("localhost")) {
+      whitelist.value.push("localhost");
+    }
     if (!whitelist.value.includes("youtube.com")) {
       whitelist.value.push("youtube.com");
     }
@@ -78,7 +79,7 @@ const loadWhitelist = () => {
     saveWhitelist();
   } catch (error) {
     console.warn("Invalid whitelist in localStorage, resetting.");
-    whitelist.value = ["youtube.com", "youtu.be"];
+    whitelist.value = ["localhost", "youtube.com", "youtu.be"];
     saveWhitelist();
   }
 };
