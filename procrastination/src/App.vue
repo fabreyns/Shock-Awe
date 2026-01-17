@@ -17,6 +17,7 @@ const YOUTUBE_LINK = "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ";
 
 let model, maxPredictions;
 let animationId = null;
+let intervalId = null;
 
 const startCamera = async () => {
   try {
@@ -30,9 +31,9 @@ const startCamera = async () => {
     });
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
-      videoPlayer.value.onloadeddata = () => {
-        predictLoop();
-      };
+      if (!intervalId) {
+        intervalId = setInterval(predictLoop, 2000);
+      }
     }
   } catch (error) {
     console.error("Camera Error:", error);
