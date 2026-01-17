@@ -111,7 +111,7 @@ onUnmounted(() => {
     ></video>
   </div>
 
-  <div class="container-fluid d-flex justify-content-center pt-4">
+  <div class="container-fluid d-flex justify-content-center pt-4 mb-5">
   <div class="card" style="width: 640px;">
       <div class="card-header bg-dark text-white">
         Phone Prediction
