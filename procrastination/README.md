@@ -36,3 +36,13 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Browser Extension Setup (Google Chrome Only)
+
+### Go to Google Chrome Extensions and Enable Developer Mode
+
+```
+chrome://extensions/
+```
+
+### Click `Load Unpacked` and Select the Folder with `manifest.json`.
