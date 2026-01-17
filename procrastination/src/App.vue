@@ -1,5 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import * as tmImage from "@teachablemachine/image";
+import { watch } from "vue";
 
 const videoPlayer = ref(null);
 const visitHistory = ref([]);
@@ -8,19 +10,31 @@ const newWhitelistDomain = ref("");
 const STORAGE_KEY = "procrastinationVisitHistory";
 const WHITELIST_KEY = "procrastinationWhitelist";
 const MAX_ENTRIES = 50;
+const URL = "https://teachablemachine.withgoogle.com/models/cuImnOTCz/";
+const predictions = ref([]);
+const isModelLoaded = ref(false);
+
+let model, maxPredictions;
+let animationId = null;
 
 const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
+      video: {
+        facingMode: "user",
+        aspectRatio: { exact: 1 },
+        width: { ideal: 480 },
+        height: { ideal: 480 },
+      },
     });
-
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
+      videoPlayer.value.onloadeddata = () => {
+        predictLoop();
+      };
     }
   } catch (error) {
     console.error("Camera Error:", error);
-    alert("Error: " + error.name);
   }
 };
 
@@ -145,7 +159,59 @@ const handleStorage = (event) => {
   }
 };
 
-onMounted(() => {
+const loadModel = async () => {
+  const modelURL = URL + "model.json";
+  const metadataURL = URL + "metadata.json";
+
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+  isModelLoaded.value = true;
+};
+
+const predictLoop = async () => {
+  if (model && videoPlayer.value) {
+    const prediction = await model.predict(videoPlayer.value, true);
+
+    predictions.value = prediction;
+
+    animationId = requestAnimationFrame(predictLoop);
+  }
+};
+
+const showPhoneWarning = ref(false);
+const hasOpenedVideo = ref(false);
+
+// Watch for phone detection
+watch(
+  predictions,
+  (newPredictions) => {
+    const result = newPredictions.find((p) => p.className === "With Phone");
+
+    if (result && result.probability > 0.9) {
+      showPhoneWarning.value = true;
+
+      // Only open video once per detection session
+      if (!hasOpenedVideo.value) {
+        window.open(
+          "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ",
+          "_blank",
+        );
+        hasOpenedVideo.value = true;
+
+        // Reset after 5 seconds to allow re-detection
+        setTimeout(() => {
+          hasOpenedVideo.value = false;
+        }, 5000);
+      }
+    } else {
+      showPhoneWarning.value = false;
+    }
+  },
+  { deep: true },
+);
+
+onMounted(async () => {
+  await loadModel();
   startCamera();
   loadVisitHistory();
   loadWhitelist();
@@ -154,6 +220,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (animationId) cancelAnimationFrame(animationId);
   window.removeEventListener("message", handleMessage);
   window.removeEventListener("storage", handleStorage);
 });
@@ -180,14 +247,16 @@ onBeforeUnmount(() => {
   </nav>
 
   <div class="container-fluid d-flex justify-content-center pt-5">
-    <button class="btn btn-primary fs-6" @click="startCamera">PRESS ME</button>
+    <button class="btn btn-primary fs-6" @click="startCamera">
+      Turn on Camera + Reset
+    </button>
   </div>
   <div class="container-fluid d-flex justify-content-center mt-4 mirror-mode">
     <video
       ref="videoPlayer"
       autoplay
       playsinline
-      width="640"
+      width="480"
       height="480"
       class="border border-dark"
     ></video>
@@ -301,6 +370,34 @@ onBeforeUnmount(() => {
       </li>
     </ul>
   </section>
+  <div class="container-fluid d-flex justify-content-center pt-4">
+    <div class="card" style="width: 640px">
+      <div class="card-header bg-dark text-white">Phone Prediction</div>
+      <ul class="list-group list-group-flush">
+        <li
+          v-for="p in predictions"
+          :key="p.className"
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          {{ p.className }}
+          <div class="progress" style="width: 60%">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              :style="{ width: p.probability * 100 + '%' }"
+              :class="p.probability > 0.8 ? 'bg-success' : 'bg-secondary'"
+            >
+              {{ (p.probability * 100).toFixed(0) }}%
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div v-if="showPhoneWarning" class="container d-flex justify-content-center">
+    <h1 class="text-danger">PUT PHONE AWAY NOWWWW!!!</h1>
+  </div>
 </template>
 
 <style scoped>
