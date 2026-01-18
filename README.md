@@ -1,23 +1,14 @@
-# procrastination
+# Ricky's Permission
 
-This template should help get you started developing with Vue 3 in Vite.
+## Inspiration
 
-## Recommended IDE Setup
+As a student with many assignments and studying that needs to be done each day, we often found ourselves distracted by our phones, doomscrolling. The next thing we notice was hours passed by without us doing anything. Thus, we would like to annoy ourselves when we are procrastinating by either opening our phone or opening other sites that is not related to our study. At the same time, making a project that is fun to do and learn through the use of AI.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## What it does
 
-## Recommended Browser Setup
+To function correctly, the application requires the camera to be enabled. Users can configure a whitelist of 'productive' websites. The system utilizes a computer vision model to detect if you are holding a smartphone, while a browser extension monitors visited URLs.
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
+If you attempt to visit a non-whitelisted site, the extension immediately intervenes by redirecting you to a 'Rick Roll' video, effectively blocking access. Similarly, if the camera detects that you are holding your phone, the system will continuously play the 'Rick Roll' video until you put away your device. Furthermore, it will also pop-up a quiz question that need to be solved to stop your browser from continuously opening a new 'Rick Roll' video tab.
 
 ## Project Setup
 
