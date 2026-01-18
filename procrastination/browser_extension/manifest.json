@@ -4,7 +4,11 @@
   "version": "1.0",
   "description": "Tracks websites you visit to help reduce procrastination",
   "permissions": ["tabs", "storage"],
-  "host_permissions": ["http://localhost:*/*", "https://localhost:*/*"],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://localhost:*/*",
+    "*://*.youtube.com/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -16,6 +20,11 @@
       "matches": ["http://localhost:*/*", "https://localhost:*/*"],
       "js": ["content.js"],
       "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["youtube.js"],
+      "run_at": "document_end"
     }
   ]
 }
