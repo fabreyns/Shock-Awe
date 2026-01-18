@@ -21,10 +21,12 @@ const userAnswer = ref("");
 const punishmentTimer = ref(null);      
 const isCoolingDown = ref(false);
 
+
 let quiz = false;
 let model, maxPredictions;
 let animationId = null;
 let intervalId = null;
+let quizHasTriggered = false;
 
 //start camera
 const startCamera = async () => {
@@ -179,7 +181,11 @@ const handleMessage = (event) => {
   // Check if the new visit is whitelisted - open video every time if not whitelisted
   const newVisit = message.payload;
   if (!isWhitelisted(newVisit.domain)) {
-    startQuiz();
+    if (!quizHasTriggered){
+      startQuiz();
+      quizHasTriggered = true
+    }
+    quiz = true
     window.open(YOUTUBE_LINK, "_blank");
   }
 };
@@ -259,6 +265,7 @@ const stopPunishment = () => {
   isCoolingDown.value = true;
   setTimeout(() => { isCoolingDown.value = false; }, 10000);
   quiz = false
+  quizHasTriggered = false
 };
 
 
@@ -279,7 +286,10 @@ watch(
       // Only open if phone wasn't already detected (prevents spam while holding phone)
       if (!wasPhoneDetected) {
         quiz = true;
-        startQuiz();
+        if (!quizHasTriggered){
+          startQuiz();
+          quizHasTriggered = true
+        }
         window.open(YOUTUBE_LINK, "_blank");
         wasPhoneDetected = true;
       }
