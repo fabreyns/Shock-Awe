@@ -4,21 +4,6 @@
   "version": "1.0",
   "description": "Tracks websites you visit to help reduce procrastination",
   "permissions": ["tabs", "storage"],
-<<<<<<< HEAD
-  "host_permissions": ["http://localhost:5173/*", "http://127.0.0.1:5173/*"],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-      "matches": ["http://localhost:5173/*", "http://127.0.0.1:5173/*"],
-      "js": ["content.js"]
-    }
-  ],
-  "action": {
-    "default_popup": "popup.html"
-  }
-=======
   "host_permissions": ["http://localhost:*/*", "https://localhost:*/*"],
   "background": {
     "service_worker": "background.js"
@@ -33,5 +18,4 @@
       "run_at": "document_start"
     }
   ]
->>>>>>> 1ca4a0c (Integrate browser extension)
 }

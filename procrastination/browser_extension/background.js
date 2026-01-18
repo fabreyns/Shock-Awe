@@ -12,14 +12,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-<<<<<<< HEAD
 const PROCRASTINATION_ORIGINS = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ];
 
-=======
->>>>>>> 1ca4a0c (Integrate browser extension)
 function logWebsite(url) {
   try {
     const urlObj = new URL(url);
@@ -46,14 +43,8 @@ function logWebsite(url) {
     // Store in chrome.storage for the popup to display
     chrome.storage.local.get(["visitHistory"], (result) => {
       const history = result.visitHistory || [];
-<<<<<<< HEAD
-      history.unshift(visitData); // Add to beginning
-
-      // Keep only last 50 visits
-=======
       history.unshift(visitData);
 
->>>>>>> 1ca4a0c (Integrate browser extension)
       if (history.length > 50) {
         history.pop();
       }
@@ -61,35 +52,13 @@ function logWebsite(url) {
       chrome.storage.local.set({ visitHistory: history });
     });
 
-<<<<<<< HEAD
-    sendToProcrastinationSite(visitData);
-=======
     // Send to external Vue app
     sendToExternalApp(visitData);
->>>>>>> 1ca4a0c (Integrate browser extension)
   } catch (e) {
     console.error("Error logging website:", e);
   }
 }
 
-<<<<<<< HEAD
-function sendToProcrastinationSite(data) {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      if (!tab.id || !tab.url) {
-        return;
-      }
-
-      const shouldSend = PROCRASTINATION_ORIGINS.some((origin) =>
-        tab.url.startsWith(origin)
-      );
-
-      if (!shouldSend) {
-        return;
-      }
-
-      chrome.tabs.sendMessage(tab.id, { type: "TRACK_VISIT", payload: data });
-=======
 // Send data to your Vue app via postMessage
 function sendToExternalApp(data) {
   // Query all tabs to find your Vue app
@@ -115,7 +84,6 @@ function sendToExternalApp(data) {
             console.log("Could not send to tab:", err.message);
           });
       }
->>>>>>> 1ca4a0c (Integrate browser extension)
     });
   });
 }

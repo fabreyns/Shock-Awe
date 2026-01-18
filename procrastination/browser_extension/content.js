@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const STORAGE_KEY = "procrastinationVisitHistory";
 const MAX_ENTRIES = 50;
 
@@ -28,17 +27,10 @@ function addVisit(entry) {
       type: "TRACK_VISIT",
       payload: entry,
     },
-    "*"
+    "*",
   );
 }
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message?.type !== "TRACK_VISIT" || !message.payload) {
-    return;
-  }
-
-  addVisit(message.payload);
-=======
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "TRACK_VISIT") {
@@ -73,5 +65,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   return true;
->>>>>>> 1ca4a0c (Integrate browser extension)
 });
