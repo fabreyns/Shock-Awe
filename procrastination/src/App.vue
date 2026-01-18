@@ -13,12 +13,20 @@ const MAX_ENTRIES = 50;
 const URL = "https://teachablemachine.withgoogle.com/models/cuImnOTCz/";
 const predictions = ref([]);
 const isModelLoaded = ref(false);
-const YOUTUBE_LINK = "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ";
+const YOUTUBE_LINK = "https://youtu.be/dQw4w9WgXcQ?si=I0WvZ4U1ySCDCnnZ&autoplay=1&mute=1";
 
+const showQuiz = ref(false);            
+const mathQuestion = ref({ text: "", answer: 0 }); 
+const userAnswer = ref("");             
+const punishmentTimer = ref(null);      
+const isCoolingDown = ref(false);
+
+let quiz = false;
 let model, maxPredictions;
 let animationId = null;
 let intervalId = null;
 
+//start camera
 const startCamera = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -32,7 +40,7 @@ const startCamera = async () => {
     if (videoPlayer.value) {
       videoPlayer.value.srcObject = stream;
       if (!intervalId) {
-        intervalId = setInterval(predictLoop, 2000);
+        intervalId = setInterval(predictLoop, 500);
       }
     }
   } catch (error) {
@@ -171,6 +179,7 @@ const handleMessage = (event) => {
   // Check if the new visit is whitelisted - open video every time if not whitelisted
   const newVisit = message.payload;
   if (!isWhitelisted(newVisit.domain)) {
+    startQuiz();
     window.open(YOUTUBE_LINK, "_blank");
   }
 };
@@ -183,6 +192,7 @@ const handleStorage = (event) => {
   }
 };
 
+//load Teachable machine model
 const loadModel = async () => {
   const modelURL = URL + "model.json";
   const metadataURL = URL + "metadata.json";
@@ -192,6 +202,7 @@ const loadModel = async () => {
   isModelLoaded.value = true;
 };
 
+//loop video
 const predictLoop = async () => {
   if (model && videoPlayer.value) {
     const prediction = await model.predict(videoPlayer.value, true);
@@ -201,6 +212,57 @@ const predictLoop = async () => {
     animationId = requestAnimationFrame(predictLoop);
   }
 };
+
+
+
+// 1. STARTS THE NIGHTMARE
+const startQuiz = () => {
+  showQuiz.value = true;
+  userAnswer.value = ""; 
+  
+  // Math Logic
+  const num1 = Math.floor(Math.random() * 10) + 2; 
+  const num2 = Math.floor(Math.random() * 10) + 2;
+  const num3 = Math.floor(Math.random() * 10) + 2;
+  const num4 = Math.floor(Math.random() * 10) + 2;
+  mathQuestion.value = { text: `${num1} x ${num2} x ${num3} x ${num4} x 0`, answer: 0 };
+
+  // THE LOOP: Open a tab every 4 seconds
+  punishmentTimer.value = setInterval(() => {
+    if (showQuiz.value) {
+      window.open(YOUTUBE_LINK, "_blank");
+    }
+  }, 2000); 
+};
+
+// 2. CHECKS YOUR ANSWER
+const submitAnswer = () => {
+  if (parseInt(userAnswer.value) === mathQuestion.value.answer) {
+    stopPunishment(); // Correct!
+  } else {
+    window.open(YOUTUBE_LINK, "_blank"); // Wrong! Punish immediately
+    userAnswer.value = "";
+  }
+};
+
+// 3. STOPS THE NIGHTMARE
+const stopPunishment = () => {
+  showQuiz.value = false;
+  
+  // Crucial: This stops the browser from crashing
+  if (punishmentTimer.value) {
+    clearInterval(punishmentTimer.value);
+    punishmentTimer.value = null;
+  }
+  
+  // Add 10s cooldown
+  isCoolingDown.value = true;
+  setTimeout(() => { isCoolingDown.value = false; }, 10000);
+  quiz = false
+};
+
+
+
 
 const showPhoneWarning = ref(false);
 let wasPhoneDetected = false;
@@ -216,6 +278,8 @@ watch(
 
       // Only open if phone wasn't already detected (prevents spam while holding phone)
       if (!wasPhoneDetected) {
+        quiz = true;
+        startQuiz();
         window.open(YOUTUBE_LINK, "_blank");
         wasPhoneDetected = true;
       }
@@ -277,6 +341,58 @@ onBeforeUnmount(() => {
       height="480"
       class="border border-dark"
     ></video>
+  </div>
+
+
+    <div v-if="quiz" class="quiz-overlay d-flex justify-content-center">
+    <div class="card p-5 shadow-lg border-danger border-5" style="max-width: 500px;">
+      <h1 class="text-danger fw-bold display-4">PUNISHMENT MODE!</h1>
+      
+      <div class="display-1 fw-bold my-4">{{ mathQuestion.text }} = ?</div>
+      
+      <div class="input-group mb-3">
+        <input 
+          v-model="userAnswer" 
+          type="number" 
+          class="form-control" 
+          @keyup.enter="submitAnswer"
+          autofocus
+        >
+        <button class="btn btn-danger btn-lg" @click="submitAnswer">SOLVE</button>
+      </div>
+      
+    </div>
+  </div>
+
+
+
+    <div class="container-fluid d-flex justify-content-center pt-4">
+    <div class="card" style="width: 640px">
+      <div class="card-header bg-dark text-white">Phone Prediction</div>
+      <ul class="list-group list-group-flush">
+        <li
+          v-for="p in predictions"
+          :key="p.className"
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          {{ p.className }}
+          <div class="progress" style="width: 60%">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              :style="{ width: p.probability * 100 + '%' }"
+              :class="p.probability > 0.8 ? 'bg-success' : 'bg-secondary'"
+            >
+              {{ (p.probability * 100).toFixed(0) }}%
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div v-if="showPhoneWarning" class="container d-flex justify-content-center">
+    <h1 class="text-danger">PUT PHONE AWAY NOWWWW!!!</h1>
   </div>
 
   <!-- Whitelist Management Section -->
@@ -387,34 +503,7 @@ onBeforeUnmount(() => {
       </li>
     </ul>
   </section>
-  <div class="container-fluid d-flex justify-content-center pt-4">
-    <div class="card" style="width: 640px">
-      <div class="card-header bg-dark text-white">Phone Prediction</div>
-      <ul class="list-group list-group-flush">
-        <li
-          v-for="p in predictions"
-          :key="p.className"
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          {{ p.className }}
-          <div class="progress" style="width: 60%">
-            <div
-              class="progress-bar"
-              role="progressbar"
-              :style="{ width: p.probability * 100 + '%' }"
-              :class="p.probability > 0.8 ? 'bg-success' : 'bg-secondary'"
-            >
-              {{ (p.probability * 100).toFixed(0) }}%
-            </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
 
-  <div v-if="showPhoneWarning" class="container d-flex justify-content-center">
-    <h1 class="text-danger">PUT PHONE AWAY NOWWWW!!!</h1>
-  </div>
 </template>
 
 <style scoped>
